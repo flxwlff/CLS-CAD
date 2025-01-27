@@ -135,7 +135,7 @@ def write_gazebo_endtag(file_name):
     with open(file_name, mode='a') as f:
         f.write('</robot>\n')
         
-
+# entry point urdf
 def write_urdf(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
     try: os.mkdir(save_dir + '/urdf')
     except: pass 
@@ -157,6 +157,7 @@ def write_urdf(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_n
     write_joint_urdf(joints_dict, repo, links_xyz_dict, file_name)
     write_gazebo_endtag(file_name)
 
+# entry point materials xacro
 def write_materials_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
     try: os.mkdir(save_dir + '/urdf')
     except: pass  
@@ -172,6 +173,7 @@ def write_materials_xacro(joints_dict, links_xyz_dict, inertial_dict, package_na
         f.write('\n')
         f.write('</robot>\n')
 
+# entry point transmissions xacro
 def write_transmissions_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
     """
     Write joints and transmission information into urdf "repo/file_name"
@@ -223,6 +225,7 @@ to swap component1<=>component2"
 
         f.write('</robot>\n')
 
+# entry point gazebo xacro
 def write_gazebo_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
     try: os.mkdir(save_dir + '/urdf')
     except: pass  
@@ -266,6 +269,7 @@ def write_gazebo_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name,
 
         f.write('</robot>\n')
 
+# entry display launch -> unused probably
 def write_display_launch(package_name, robot_name, save_dir):
     """
     write display launch file "save_dir/launch/display.launch"
@@ -313,6 +317,7 @@ def write_display_launch(package_name, robot_name, save_dir):
     with open(file_name, mode='w') as f:
         f.write(launch_xml)
 
+# entry gazebo launch -> unused probably
 def write_gazebo_launch(package_name, robot_name, save_dir):
     """
     write gazebo launch file "save_dir/launch/gazebo.launch"
@@ -359,7 +364,7 @@ def write_gazebo_launch(package_name, robot_name, save_dir):
     with open(file_name, mode='w') as f:
         f.write(launch_xml)
 
-
+# entry controller launch
 def write_control_launch(package_name, robot_name, save_dir, joints_dict):
     """
     write control launch file "save_dir/launch/controller.launch"
@@ -615,7 +620,7 @@ def make_joints_dict(root, msg):
                 break
         elif joint_type == 'fixed':
             pass
-        
+        # occurenceTwo is none for 'link_0:1+base v1:1'
         if joint.occurrenceTwo.component.name == 'base_link':
             joint_dict['parent'] = 'base_link'
         else:
@@ -833,6 +838,8 @@ def make_inertial_dict(root, msg):
     return inertial_dict, msg
 
 
+
+# extension code starts here
 def start():
     """
     Creates the promoted "Export Project as URDF" command in the CLS-CAD tab.
@@ -888,97 +895,6 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         args.command.destroy, command_destroy, local_handlers=local_handlers
     )
 
-
-def recursively_submit(folders: adsk.core.DataFolders):
-    """
-    For every passed DataFolder, all contained Files are opened that are f3d files. The
-    corresponding JSON for the backend is created and submitted if the file is valid.
-    (Provides at least one format) If the file is not valid, it is skipped. This may be
-    changed to provide an error report in the future. The file traversal is DFS, after a
-    single folder is done, its children are processed immediately.
-
-    :param folders: adsk.core.DataFolders:
-    :return:
-    """
-    global progress_dialog
-    for folder in wrapped_forge_call(folders.asArray, progress_dialog):
-        progress_dialog.progressValue = 0
-        progress_dialog.message = f'Preparing to process Folder "{folder.name}"...'
-        # ignore auto-generated content
-        if folder.name in ["Synthesized Assemblies"]:
-            continue
-        submit_files_in_folder(folder)
-        recursively_submit(folder.dataFolders)
-
-
-def submit_files_in_folder(folder):
-    """
-    Opens all files in a DataFolder in sequence and calls the CheckAndSubmit command on
-    them, submitting them to the backend database as long as they pass validation.
-
-    :param folder: The DataFolder to process.
-    :return:
-    """
-    global progress_dialog
-    folder_data_files = wrapped_forge_call(folder.dataFiles.asArray, progress_dialog)
-    for file in folder_data_files:
-        if not file.fileExtension == "f3d":
-            continue
-        progress_dialog.maximumValue = len(folder_data_files)
-        progress_dialog.message = (
-            f'Folder "{folder.name}" contains {len(folder_data_files)} files.\n\n'
-            f"Processing..."
-        )
-        app = adsk.core.Application.get()
-        document = app.documents.open(file)
-        design = adsk.fusion.Design.cast(app.activeProduct)
-
-        # TODO inject urdf exporter here
-
-        root = design.rootComponent  # root component 
-        components = design.allComponents
-        
-        if (
-            design.findAttributes("CLS-JOINT", "")
-            or design.findAttributes("CLS-PART", "")
-            or design.findAttributes("CLS-INFO", "")
-        ):
-            export_mgr = design.exportManager
-            global export_path
-            fusion_archive_options = export_mgr.createFusionArchiveExportOptions(
-                export_path + "/" + slugify(document.name)
-            )
-            export_mgr.execute(fusion_archive_options)
-            document.close(False)
-        else:
-            document.close(False)
-        progress_dialog.progressValue += 1
-
-
-def slugify(value, allow_unicode=False):
-    """Taken from https://github.com/django/django/blob/master/django/utils/text.py
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
-    dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
-    trailing whitespace, dashes, and underscores.
-
-    :param value: param allow_unicode:  (Default value = False)
-    :param allow_unicode: Default value = False)
-    :return:
-    """
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize("NFKC", value)
-    else:
-        value = (
-            unicodedata.normalize("NFKD", value)
-            .encode("ascii", "ignore")
-            .decode("ascii")
-        )
-    value = re.sub(r"[^\w\s-]", "", value.lower())
-    return re.sub(r"[-\s]+", "-", value).strip("-_")
-
-
 def command_execute(args: adsk.core.CommandEventArgs):
     """
     Executes immediately when user clicks the button in CLS-CAD tab as there are no
@@ -991,60 +907,62 @@ def command_execute(args: adsk.core.CommandEventArgs):
     """
     futil.log(f"{CMD_NAME} Command Execute Event")
 
-    result = ui.messageBox(
-        "This will take a considerable amount of time and is intended to be used when for some reason a large project "
-        "needs to be exported.\nEach file in the project will be opened, any part that contains type information "
-        "will be exported as f3d file.\n\nDo you wish to continue?",
-        "Export",
-        adsk.core.MessageBoxButtonTypes.OKCancelButtonType,
-    )
-    if not result:
-        folder_dlg = ui.createFolderDialog()
-        folder_dlg.title = "Fusion Choose Folder Dialog"
-
-        dlg_result = folder_dlg.showDialog()
-        if dlg_result == adsk.core.DialogResults.DialogOK:
-            global export_path
-            export_path = folder_dlg.folder
-            if not os.path.exists(folder_dlg.folder):
-                os.makedirs(folder_dlg.folder)
-        else:
+    load_project_taxonomy_to_config()
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if not design:
+            ui.messageBox('No active Fusion design', title)
             return
-
-        global progress_dialog
-        progress_dialog = ui.createProgressDialog()
-        progress_dialog.show("Crawl Progress", "Beginning to crawl...", 0, 1)
-
-        root_folder = (
-            app.activeDocument.dataFile.parentProject.rootFolder
-            if app.activeDocument.dataFile is not None
-            else app.data.activeProject.rootFolder
+    
+    # TODO inject urdf exporter here
+    success_msg = 'Successfully create URDF file'
+    title = 'Fusion to urdf export'
+    msg = success_msg
+    ui.messageBox(
+        msg,
+        title,
+        adsk.core.MessageBoxButtonTypes.OKCancelButtonType
+    )
+    root = design.rootComponent  # root component 
+    components = design.allComponents
+    joints_dict, msg = make_joints_dict(root,msg)
+    if msg != success_msg:
+        ui.messageBox(
+            msg,
+            title,
+            adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
-
-        load_project_taxonomy_to_config()
-
-        submit_files_in_folder(root_folder)
-        recursively_submit(root_folder.dataFolders)
-        json.dump(
-            {"taxonomies": config.taxonomies, "mappings": config.mappings},
-            open(
-                export_path
-                + "/"
-                + slugify(
-                    app.activeDocument.dataFile.parentProject.name
-                    if app.activeDocument.dataFile is not None
-                    else app.data.activeProject.name
-                )
-                + ".taxonomy",
-                "w",
-                encoding="utf-8",
-            ),
-            ensure_ascii=False,
-            indent=4,
+    # debug
+    if msg == success_msg:
+        ui.messageBox(
+            joints_dict,
+            title,
+            adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
-        shutil.make_archive(export_path, "zip", export_path)
-        shutil.rmtree(export_path)
-        progress_dialog.hide()
+        # Generate inertial_dict
+    inertial_dict, msg = make_inertial_dict(root, msg)
+    if msg != success_msg:
+        ui.messageBox(
+            msg,
+            title,
+            adsk.core.MessageBoxButtonTypes.OKCancelButtonType
+        )
+        return 0
+    elif not 'base_link' in inertial_dict:
+        msg = 'There is no base_link. Please set base_link and run again.'
+        ui.messageBox(
+            msg,
+            title,
+            adsk.core.MessageBoxButtonTypes.OKCancelButtonType
+        )
+        return 0
+    
+    # debug
+    if msg == success_msg:
+        ui.messageBox(inertial_dict)
+    
+    links_xyz_dict = {}
+        
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
