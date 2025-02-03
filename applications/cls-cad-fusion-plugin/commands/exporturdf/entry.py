@@ -926,6 +926,9 @@ def command_execute(args: adsk.core.CommandEventArgs):
         adsk.core.MessageBoxButtonTypes.OKCancelButtonType
     )
 
+    root = design.rootComponent  # root component 
+    components = design.allComponents
+
      # set the names        
     robot_name = root.name.split()[0]
     package_name = robot_name + '_description'
@@ -945,8 +948,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
     save_dir = export_path + '/' + package_name  
 
     package_dir = os.path.abspath(os.path.dirname(__file__)) + '/package/'
-    root = design.rootComponent  # root component 
-    components = design.allComponents
+    
     joints_dict, msg = make_joints_dict(root,msg)
     if msg != success_msg:
         ui.messageBox(
@@ -963,7 +965,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
             adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
         return 0
-    elif not 'base_link' in inertial_dict:
+    elif not 'link_0:1' in inertial_dict:
         msg = 'There is no base_link. Please set base_link and run again.'
         ui.messageBox(
             msg,
