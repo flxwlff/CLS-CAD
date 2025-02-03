@@ -621,11 +621,13 @@ def make_joints_dict(root, msg):
         elif joint_type == 'fixed':
             pass
         # occurenceTwo is none for 'link_0:1+base v1:1'
-        if joint.occurrenceTwo.component.name == 'base_link':
+        if joint.occurrenceTwo is None or joint.occurrenceTwo.component.name == 'base_link': 
             joint_dict['parent'] = 'base_link'
         else:
             joint_dict['parent'] = re.sub('[ :()]', '_', joint.occurrenceTwo.name)
+
         joint_dict['child'] = re.sub('[ :()]', '_', joint.occurrenceOne.name)
+
         
         
         #There seem to be a problem with geometryOrOriginTwo. To calcualte the correct orogin of the generated stl files following approach was used.
@@ -915,7 +917,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
             return
     
     # TODO inject urdf exporter here
-    success_msg = 'Successfully create URDF file'
+    success_msg = 'Started export to urdf'
     title = 'Fusion to urdf export'
     msg = success_msg
     ui.messageBox(
@@ -923,19 +925,32 @@ def command_execute(args: adsk.core.CommandEventArgs):
         title,
         adsk.core.MessageBoxButtonTypes.OKCancelButtonType
     )
+
+     # set the names        
+    robot_name = root.name.split()[0]
+    package_name = robot_name + '_description'
+    
+    folder_dlg = ui.createFolderDialog()
+    folder_dlg.title = "Fusion Choose Folder Dialog"
+
+    dlg_result = folder_dlg.showDialog()
+    if dlg_result == adsk.core.DialogResults.DialogOK:
+        global export_path
+        export_path = folder_dlg.folder
+        if not os.path.exists(folder_dlg.folder):
+            os.makedirs(folder_dlg.folder)
+    else:
+        return
+    
+    save_dir = export_path + '/' + package_name  
+
+    package_dir = os.path.abspath(os.path.dirname(__file__)) + '/package/'
     root = design.rootComponent  # root component 
     components = design.allComponents
     joints_dict, msg = make_joints_dict(root,msg)
     if msg != success_msg:
         ui.messageBox(
             msg,
-            title,
-            adsk.core.MessageBoxButtonTypes.OKCancelButtonType
-        )
-    # debug
-    if msg == success_msg:
-        ui.messageBox(
-            joints_dict,
             title,
             adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
@@ -962,6 +977,17 @@ def command_execute(args: adsk.core.CommandEventArgs):
         ui.messageBox(inertial_dict)
     
     links_xyz_dict = {}
+    
+    # --------------------
+    # Generate URDF
+    write_urdf(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir)
+    write_materials_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir)
+    write_transmissions_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir)
+    write_gazebo_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir)
+    write_display_launch(package_name, robot_name, save_dir)
+    write_gazebo_launch(package_name, robot_name, save_dir)
+    write_control_launch(package_name, robot_name, save_dir, joints_dict)
+    write_yaml(package_name, robot_name, save_dir, joints_dict)
         
 
 
