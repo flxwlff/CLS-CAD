@@ -9,6 +9,7 @@ from ...lib.cls_python_compat import *
 from ...lib.general_utils import *
 from xml.etree.ElementTree import Element, SubElement
 from xml.dom import minidom
+from xml.etree import ElementTree
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -53,22 +54,22 @@ def write_link_urdf(joints_dict, repo, links_xyz_dict, file_name, inertial_dict)
     """
     with open(file_name, mode='a') as f:
         # for base_link
-        center_of_mass = inertial_dict['base_link']['center_of_mass']
-        link = Link.Link(name='base_link', xyz=[0,0,0], 
+        center_of_mass = inertial_dict['link_0_1']['center_of_mass']
+        link = Link(name='link_0_1', xyz=[0,0,0], 
             center_of_mass=center_of_mass, repo=repo,
-            mass=inertial_dict['base_link']['mass'],
-            inertia_tensor=inertial_dict['base_link']['inertia'])
+            mass=inertial_dict['link_0_1']['mass'],
+            inertia_tensor=inertial_dict['link_0_1']['inertia'])
         links_xyz_dict[link.name] = link.xyz
         link.make_link_xml()
         f.write(link.link_xml)
         f.write('\n')
 
-        # others
+        # others TODO fix this
         for joint in joints_dict:
             name = joints_dict[joint]['child']
             center_of_mass = \
                 [ i-j for i, j in zip(inertial_dict[name]['center_of_mass'], joints_dict[joint]['xyz'])]
-            link = Link.Link(name=name, xyz=joints_dict[joint]['xyz'],\
+            link = Link(name=name, xyz=joints_dict[joint]['xyz'],\
                 center_of_mass=center_of_mass,\
                 repo=repo, mass=inertial_dict[name]['mass'],\
                 inertia_tensor=inertial_dict[name]['inertia'])
@@ -114,7 +115,7 @@ to swap component1<=>component2"
                 % (parent, child, parent, child), "Error!")
                 quit()
                 
-            joint = Joint.Joint(name=j, joint_type = joint_type, xyz=xyz, \
+            joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
             axis=joints_dict[j]['axis'], parent=parent, child=child, \
             upper_limit=upper_limit, lower_limit=lower_limit)
             joint.make_joint_xml()
@@ -215,7 +216,7 @@ to swap component1<=>component2"
                 % (parent, child, parent, child), "Error!")
                 quit()
                 
-            joint = Joint.Joint(name=j, joint_type = joint_type, xyz=xyz, \
+            joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
             axis=joints_dict[j]['axis'], parent=parent, child=child, \
             upper_limit=upper_limit, lower_limit=lower_limit)
             if joint_type != 'fixed':
@@ -715,46 +716,46 @@ class Link:
         self.mass = mass
         self.inertia_tensor = inertia_tensor
 
-def make_link_xml(self):
-    """
-    Generate the link_xml and hold it by self.link_xml
-    """
-    
-    link = Element('link')
-    link.attrib = {'name':self.name}
-    
-    #inertial
-    inertial = SubElement(link, 'inertial')
-    origin_i = SubElement(inertial, 'origin')
-    origin_i.attrib = {'xyz':' '.join([str(_) for _ in self.center_of_mass]), 'rpy':'0 0 0'}       
-    mass = SubElement(inertial, 'mass')
-    mass.attrib = {'value':str(self.mass)}
-    inertia = SubElement(inertial, 'inertia')
-    inertia.attrib = \
-        {'ixx':str(self.inertia_tensor[0]), 'iyy':str(self.inertia_tensor[1]),\
-        'izz':str(self.inertia_tensor[2]), 'ixy':str(self.inertia_tensor[3]),\
-        'iyz':str(self.inertia_tensor[4]), 'ixz':str(self.inertia_tensor[5])}        
-    
-    # visual
-    visual = SubElement(link, 'visual')
-    origin_v = SubElement(visual, 'origin')
-    origin_v.attrib = {'xyz':' '.join([str(_) for _ in self.xyz]), 'rpy':'0 0 0'}
-    geometry_v = SubElement(visual, 'geometry')
-    mesh_v = SubElement(geometry_v, 'mesh')
-    mesh_v.attrib = {'filename':'package://' + self.repo + self.name + '.stl','scale':'0.001 0.001 0.001'}
-    material = SubElement(visual, 'material')
-    material.attrib = {'name':'silver'}
-    
-    # collision
-    collision = SubElement(link, 'collision')
-    origin_c = SubElement(collision, 'origin')
-    origin_c.attrib = {'xyz':' '.join([str(_) for _ in self.xyz]), 'rpy':'0 0 0'}
-    geometry_c = SubElement(collision, 'geometry')
-    mesh_c = SubElement(geometry_c, 'mesh')
-    mesh_c.attrib = {'filename':'package://' + self.repo + self.name + '.stl','scale':'0.001 0.001 0.001'}
+    def make_link_xml(self):
+        """
+        Generate the link_xml and hold it by self.link_xml
+        """
+        
+        link = Element('link')
+        link.attrib = {'name':self.name}
+        
+        #inertial
+        inertial = SubElement(link, 'inertial')
+        origin_i = SubElement(inertial, 'origin')
+        origin_i.attrib = {'xyz':' '.join([str(_) for _ in self.center_of_mass]), 'rpy':'0 0 0'}       
+        mass = SubElement(inertial, 'mass')
+        mass.attrib = {'value':str(self.mass)}
+        inertia = SubElement(inertial, 'inertia')
+        inertia.attrib = \
+            {'ixx':str(self.inertia_tensor[0]), 'iyy':str(self.inertia_tensor[1]),\
+            'izz':str(self.inertia_tensor[2]), 'ixy':str(self.inertia_tensor[3]),\
+            'iyz':str(self.inertia_tensor[4]), 'ixz':str(self.inertia_tensor[5])}        
+        
+        # visual
+        visual = SubElement(link, 'visual')
+        origin_v = SubElement(visual, 'origin')
+        origin_v.attrib = {'xyz':' '.join([str(_) for _ in self.xyz]), 'rpy':'0 0 0'}
+        geometry_v = SubElement(visual, 'geometry')
+        mesh_v = SubElement(geometry_v, 'mesh')
+        mesh_v.attrib = {'filename':'package://' + self.repo + self.name + '.stl','scale':'0.001 0.001 0.001'}
+        material = SubElement(visual, 'material')
+        material.attrib = {'name':'silver'}
+        
+        # collision
+        collision = SubElement(link, 'collision')
+        origin_c = SubElement(collision, 'origin')
+        origin_c.attrib = {'xyz':' '.join([str(_) for _ in self.xyz]), 'rpy':'0 0 0'}
+        geometry_c = SubElement(collision, 'geometry')
+        mesh_c = SubElement(geometry_c, 'mesh')
+        mesh_c.attrib = {'filename':'package://' + self.repo + self.name + '.stl','scale':'0.001 0.001 0.001'}
 
-    # print("\n".join(utils.prettify(link).split("\n")[1:]))
-    self.link_xml = "\n".join(prettify(link).split("\n")[1:])
+        # print("\n".join(utils.prettify(link).split("\n")[1:]))
+        self.link_xml = "\n".join(prettify(link).split("\n")[1:])
 
 def prettify(elem):
     """
@@ -945,7 +946,10 @@ def command_execute(args: adsk.core.CommandEventArgs):
     else:
         return
     
-    save_dir = export_path + '/' + package_name  
+    save_dir = export_path + '/' + package_name
+    
+    try: os.mkdir(save_dir)
+    except: pass  
 
     package_dir = os.path.abspath(os.path.dirname(__file__)) + '/package/'
     
@@ -965,7 +969,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
             adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
         return 0
-    elif not 'link_0:1' in inertial_dict:
+    elif not 'link_0_1' in inertial_dict:
         msg = 'There is no base_link. Please set base_link and run again.'
         ui.messageBox(
             msg,
@@ -973,10 +977,6 @@ def command_execute(args: adsk.core.CommandEventArgs):
             adsk.core.MessageBoxButtonTypes.OKCancelButtonType
         )
         return 0
-    
-    # debug
-    if msg == success_msg:
-        ui.messageBox(inertial_dict)
     
     links_xyz_dict = {}
     
