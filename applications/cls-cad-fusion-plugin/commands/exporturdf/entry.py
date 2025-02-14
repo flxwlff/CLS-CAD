@@ -67,6 +67,7 @@ def write_link_urdf(joints_dict, repo, links_xyz_dict, file_name, inertial_dict)
         # others TODO fix this
         for joint in joints_dict:
             name = joints_dict[joint]['child']
+            # check in which link part with name is located
             center_of_mass = \
                 [ i-j for i, j in zip(inertial_dict[name]['center_of_mass'], joints_dict[joint]['xyz'])]
             link = Link(name=name, xyz=joints_dict[joint]['xyz'],\
@@ -553,7 +554,7 @@ class Joint:
 
 def make_joints_dict(root, msg):
     """
-    joints_dict holds parent, axis and xyz informatino of the joints
+    joints_dict holds parent, axis and xyz information of the joints
     
     
     Parameters
@@ -621,13 +622,25 @@ def make_joints_dict(root, msg):
                 break
         elif joint_type == 'fixed':
             pass
+
         # occurenceTwo is none for 'link_0:1+base v1:1'
         if joint.occurrenceTwo is None or joint.occurrenceTwo.component.name == 'base_link': 
             joint_dict['parent'] = 'base_link'
+            child_fullPathName = joint.occurrenceOne.fullPathName
+            child_link_name = child_fullPathName[0:child_fullPathName.find('+')]
+            # child_link_name = child_link_name[0:child_link_name.find(':')]
+            joint_dict['child'] = re.sub('[ :()]', '_', child_link_name)
+            
         else:
-            joint_dict['parent'] = re.sub('[ :()]', '_', joint.occurrenceTwo.name)
-
-        joint_dict['child'] = re.sub('[ :()]', '_', joint.occurrenceOne.name)
+            parent_fullPathName = joint.occurrenceOne.fullPathName
+            parent_link_name = parent_fullPathName[0:parent_fullPathName.find('+')]
+            # parent_link_name = parent_link_name[0:parent_link_name.find(':')]
+            joint_dict['parent'] = re.sub('[ :()]', '_', parent_link_name)
+            # occurenceOne contains the relevant name for the joint
+            child_fullPathName = joint.occurrenceTwo.fullPathName
+            child_link_name = child_fullPathName[0:child_fullPathName.find('+')]
+            # child_link_name = child_link_name[0:child_link_name.find(':')]
+            joint_dict['child'] = re.sub('[ :()]', '_', child_link_name)
 
         
         
