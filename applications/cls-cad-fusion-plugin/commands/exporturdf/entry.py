@@ -100,6 +100,10 @@ def write_joint_urdf(joints_dict, repo, links_xyz_dict, file_name):
     with open(file_name, mode='a') as f:
         for j in joints_dict:
             parent = joints_dict[j]['parent']
+            if(parent == "base_link"):
+                pass
+            else:
+                continue
             child = joints_dict[j]['child']
             joint_type = joints_dict[j]['type']
             upper_limit = joints_dict[j]['upper_limit']
