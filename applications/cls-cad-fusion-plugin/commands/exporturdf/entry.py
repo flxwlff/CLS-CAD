@@ -101,32 +101,31 @@ def write_joint_urdf(joints_dict, repo, links_xyz_dict, file_name):
         for j in joints_dict:
             parent = joints_dict[j]['parent']
             if(parent == "base_link"):
-                pass
-            else:
                 continue
-            child = joints_dict[j]['child']
-            joint_type = joints_dict[j]['type']
-            upper_limit = joints_dict[j]['upper_limit']
-            lower_limit = joints_dict[j]['lower_limit']
-            try:
-                xyz = [round(p-c, 6) for p, c in \
-                    zip(links_xyz_dict[parent], links_xyz_dict[child])]  # xyz = parent - child
-            except KeyError as ke:
-                app = adsk.core.Application.get()
-                ui = app.userInterface
-                ui.messageBox("There seems to be an error with the connection between\n\n%s\nand\n%s\n\nCheck \
-whether the connections\nparent=component2=%s\nchild=component1=%s\nare correct or if you need \
-to swap component1<=>component2"
-                % (parent, child, parent, child), "Error!")
-                quit()
-                
-            joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
-            axis=joints_dict[j]['axis'], parent=parent, child=child, \
-            upper_limit=upper_limit, lower_limit=lower_limit)
-            joint.make_joint_xml()
-            joint.make_transmission_xml()
-            f.write(joint.joint_xml)
-            f.write('\n')
+            else:
+                child = joints_dict[j]['child']
+                joint_type = joints_dict[j]['type']
+                upper_limit = joints_dict[j]['upper_limit']
+                lower_limit = joints_dict[j]['lower_limit']
+                try:
+                    xyz = [round(p-c, 6) for p, c in \
+                        zip(links_xyz_dict[parent], links_xyz_dict[child])]  # xyz = parent - child
+                except KeyError as ke:
+                    app = adsk.core.Application.get()
+                    ui = app.userInterface
+                    ui.messageBox("There seems to be an error with the connection between\n\n%s\nand\n%s\n\nCheck \
+    whether the connections\nparent=component2=%s\nchild=component1=%s\nare correct or if you need \
+    to swap component1<=>component2"
+                    % (parent, child, parent, child), "Error!")
+                    quit()
+                    
+                joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
+                axis=joints_dict[j]['axis'], parent=parent, child=child, \
+                upper_limit=upper_limit, lower_limit=lower_limit)
+                joint.make_joint_xml()
+                joint.make_transmission_xml()
+                f.write(joint.joint_xml)
+                f.write('\n')
 
 def write_gazebo_endtag(file_name):
     """
@@ -205,29 +204,32 @@ def write_transmissions_xacro(joints_dict, links_xyz_dict, inertial_dict, packag
 
         for j in joints_dict:
             parent = joints_dict[j]['parent']
-            child = joints_dict[j]['child']
-            joint_type = joints_dict[j]['type']
-            upper_limit = joints_dict[j]['upper_limit']
-            lower_limit = joints_dict[j]['lower_limit']
-            try:
-                xyz = [round(p-c, 6) for p, c in \
-                    zip(links_xyz_dict[parent], links_xyz_dict[child])]  # xyz = parent - child
-            except KeyError as ke:
-                app = adsk.core.Application.get()
-                ui = app.userInterface
-                ui.messageBox("There seems to be an error with the connection between\n\n%s\nand\n%s\n\nCheck \
-whether the connections\nparent=component2=%s\nchild=component1=%s\nare correct or if you need \
-to swap component1<=>component2"
-                % (parent, child, parent, child), "Error!")
-                quit()
-                
-            joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
-            axis=joints_dict[j]['axis'], parent=parent, child=child, \
-            upper_limit=upper_limit, lower_limit=lower_limit)
-            if joint_type != 'fixed':
-                joint.make_transmission_xml()
-                f.write(joint.tran_xml)
-                f.write('\n')
+            if(parent == "base_link"):
+                continue
+            else:
+                child = joints_dict[j]['child']
+                joint_type = joints_dict[j]['type']
+                upper_limit = joints_dict[j]['upper_limit']
+                lower_limit = joints_dict[j]['lower_limit']
+                try:
+                    xyz = [round(p-c, 6) for p, c in \
+                        zip(links_xyz_dict[parent], links_xyz_dict[child])]  # xyz = parent - child
+                except KeyError as ke:
+                    app = adsk.core.Application.get()
+                    ui = app.userInterface
+                    ui.messageBox("There seems to be an error with the connection between\n\n%s\nand\n%s\n\nCheck \
+    whether the connections\nparent=component2=%s\nchild=component1=%s\nare correct or if you need \
+    to swap component1<=>component2"
+                    % (parent, child, parent, child), "Error!")
+                    quit()
+                    
+                joint = Joint(name=j, joint_type = joint_type, xyz=xyz, \
+                axis=joints_dict[j]['axis'], parent=parent, child=child, \
+                upper_limit=upper_limit, lower_limit=lower_limit)
+                if joint_type != 'fixed':
+                    joint.make_transmission_xml()
+                    f.write(joint.tran_xml)
+                    f.write('\n')
 
         f.write('</robot>\n')
 
@@ -249,7 +251,7 @@ def write_gazebo_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name,
         gazebo = Element('gazebo')
         plugin = SubElement(gazebo, 'plugin')
         plugin.attrib = {'name':'control', 'filename':'libgazebo_ros_control.so'}
-        gazebo_xml = "\n".join(utils.prettify(gazebo).split("\n")[1:])
+        gazebo_xml = "\n".join(prettify(gazebo).split("\n")[1:])
         f.write(gazebo_xml)
 
         # for base_link
@@ -317,7 +319,7 @@ def write_display_launch(package_name, robot_name, save_dir):
     node3 = SubElement(launch, 'node')
     node3.attrib = {'name':'rviz', 'pkg':'rviz', 'args':'-d $(arg rvizconfig)', 'type':'rviz', 'required':'true'}
 
-    launch_xml = "\n".join(utils.prettify(launch).split("\n")[1:])        
+    launch_xml = "\n".join(prettify(launch).split("\n")[1:])        
 
     file_name = save_dir + '/launch/display.launch'    
     with open(file_name, mode='w') as f:
@@ -364,7 +366,7 @@ def write_gazebo_launch(package_name, robot_name, save_dir):
 
 
     
-    launch_xml = "\n".join(utils.prettify(launch).split("\n")[1:])        
+    launch_xml = "\n".join(prettify(launch).split("\n")[1:])        
     
     file_name = save_dir + '/launch/' + 'gazebo.launch'    
     with open(file_name, mode='w') as f:
@@ -416,8 +418,8 @@ def write_control_launch(package_name, robot_name, save_dir, joints_dict):
                     'to':'/' + robot_name + '/joint_states'}
     
     #launch_xml  = "\n".join(utils.prettify(launch).split("\n")[1:])   
-    launch_xml  = "\n".join(utils.prettify(node_controller).split("\n")[1:])   
-    launch_xml += "\n".join(utils.prettify(node_publisher).split("\n")[1:])   
+    launch_xml  = "\n".join(prettify(node_controller).split("\n")[1:])   
+    launch_xml += "\n".join(prettify(node_publisher).split("\n")[1:])   
 
     file_name = save_dir + '/launch/controller.launch'    
     with open(file_name, mode='w') as f:
@@ -521,7 +523,7 @@ class Joint:
             limit.attrib = {'upper': str(self.upper_limit), 'lower': str(self.lower_limit),
                             'effort': '100', 'velocity': '100'}
             
-        self.joint_xml = "\n".join(utils.prettify(joint).split("\n")[1:])
+        self.joint_xml = "\n".join(prettify(joint).split("\n")[1:])
 
     def make_transmission_xml(self):
         """
@@ -553,7 +555,7 @@ class Joint:
         mechanicalReduction = SubElement(actuator, 'mechanicalReduction')
         mechanicalReduction.text = '1'
         
-        self.tran_xml = "\n".join(utils.prettify(tran).split("\n")[1:])
+        self.tran_xml = "\n".join(prettify(tran).split("\n")[1:])
 
 
 def make_joints_dict(root, msg):
