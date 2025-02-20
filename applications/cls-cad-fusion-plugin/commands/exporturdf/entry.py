@@ -142,6 +142,38 @@ def write_gazebo_endtag(file_name):
         
 # entry point urdf
 def write_urdf(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
+    # TODO: fix header of urdf
+    # TODO: dont write first link twice
+    # TODO: xyz in joint tags should not be zero everytime
+    # TODO: double check axis calculation
+    # TODO: in urdf under below joint tags there should be transmissions
+    # gazebo plugin tag
+    # gazebo 0 references
+    try: os.mkdir(save_dir + '/urdf')
+    except: pass 
+
+    file_name = save_dir + '/urdf/' + robot_name + '.xacro'  # the name of urdf file
+    repo = package_name + '/meshes/'  # the repository of binary stl files
+    with open(file_name, mode='w') as f:
+        f.write('<?xml version="1.0" ?>\n')
+        f.write('<robot name="{}" xmlns:xacro="http://www.ros.org/wiki/xacro">\n'.format(robot_name))
+        f.write('\n')
+        f.write('<xacro:include filename="$(find {})/urdf/materials.xacro" />'.format(package_name))
+        f.write('\n')
+        f.write('<xacro:include filename="$(find {})/urdf/{}.trans" />'.format(package_name, robot_name))
+        f.write('\n')
+        f.write('<xacro:include filename="$(find {})/urdf/{}.gazebo" />'.format(package_name, robot_name))
+        f.write('\n')
+
+    write_link_urdf(joints_dict, repo, links_xyz_dict, file_name, inertial_dict)
+    write_joint_urdf(joints_dict, repo, links_xyz_dict, file_name)
+    write_gazebo_endtag(file_name)
+
+def write_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_name, save_dir):
+    # TODO: dont write first link twice
+    # TODO: xyz in joint tags should not be zero everytime
+    # TODO: double check axis calculation
+
     try: os.mkdir(save_dir + '/urdf')
     except: pass 
 
