@@ -2,7 +2,6 @@ import re
 import shutil
 import unicodedata
 import fileinput
-from distutils.dir_util import copy_tree
 import sys
 
 import adsk.core
@@ -37,7 +36,7 @@ def copy_package(save_dir, package_dir):
     except: pass 
     try: os.mkdir(save_dir + '/urdf')
     except: pass 
-    copy_tree(package_dir, save_dir)
+    shutil.copytree(package_dir, save_dir)
 
 def update_cmakelists(save_dir, package_name):
     file_name = save_dir + '/CMakeLists.txt'
@@ -257,7 +256,7 @@ def write_urdf(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_n
     try: os.mkdir(save_dir + '/urdf')
     except: pass 
 
-    file_name = save_dir + '/urdf/' + robot_name + '.xacro'  # the name of urdf file
+    file_name = save_dir + '/urdf/' + robot_name + '.urdf'  # the name of urdf file
     repo = package_name + '/meshes/'  # the repository of binary stl files
     with open(file_name, mode='w') as f:
         f.write('<?xml version="1.0" ?>\n')
@@ -279,6 +278,7 @@ def write_xacro(joints_dict, links_xyz_dict, inertial_dict, package_name, robot_
 
     try: os.mkdir(save_dir + '/urdf')
     except: pass 
+
 
     file_name = save_dir + '/urdf/' + robot_name + '.xacro'  # the name of urdf file
     repo = package_name + '/meshes/'  # the repository of binary stl files
@@ -1147,9 +1147,9 @@ def command_execute(args: adsk.core.CommandEventArgs):
     write_yaml(package_name, robot_name, save_dir, joints_dict)
 
      # copy over package files
-    utils.copy_package(save_dir, package_dir)
-    utils.update_cmakelists(save_dir, package_name)
-    utils.update_package_xml(save_dir, package_name)
+    copy_package(save_dir, package_dir)
+    update_cmakelists(save_dir, package_name)
+    update_package_xml(save_dir, package_name)
 
     # Generate STl files        
     copy_occs(root)
